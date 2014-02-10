@@ -39,6 +39,7 @@
 %% [Heuristics I]
 %% Explain in a few sentences how your heuristic works.
 [explain in less than 200 words]
+My Heuristic is similar to the Manhattan distance in that it considers the distance between the goal and a state linearly, but out of the two dimensions it only returns the maximum of these two values; it returns the difference between the most relevant dimension. This is also known as the Chebyshev distance.
 
 
 /* ------------------------------------------------------ */
@@ -47,18 +48,19 @@
 %% Which of the four heuristics are admissible?
 <5. 1 Null>
 [yes/no]
-
+yes
 
 <5.2 Manhattan>
 [yes/no]
-
+yes
 
 <5.3 Rounded Euclidean>
 [yes/no]
-
+yes
 
 <5.4  Your Heuristic>
 [yes/no]
+yes
 
 %% For any which is not admissible give a counter example.
 <5.5 Counter examples>
@@ -73,7 +75,7 @@
 %% Which of the heuristics are admissible now? 
 <6.1 Null>
 [yes/no]
-
+yes
 
 <6.2 Manhattan>
 [yes/no]
