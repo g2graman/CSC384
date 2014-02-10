@@ -165,7 +165,7 @@ hfnMyHeuristic(X/Y, Val) :-
   loadMazeInfo(mazesDatabase), %loading the maze info
   maze(_, _, _, _, _, GX/GY), %obtaining the goal state
 
-  mX is (GX - X), mY is (Gy - Y), max(higher, mX, mY),
+  mX is (GX - X), mY is (GY - Y), max(higher, mX, mY),
   Val is higher.
 
 
