@@ -46,15 +46,7 @@ mazesDatabase([
   PUT YOUR IMPLEMENTATION BELOW
   You must define the following functions before you can call any search algorithm:
 -------------------------------------------------------------------------*/
-threeToFour(X/Y, [(1, threeto4-NX/NY)]) :-
-  Space is 4 - Y, min(TransferAmount, X, Space),
-  TransferAmount > 0,
-  NX is X - TransferAmount, NY is Y + TransferAmount.
-threeToFour(X/Y, []) :-
-  Space is 4 - Y, min(TransferAmount, X, Space),
-  TransferAmount =:= 0.
-
-moveLeft(X/Y, Xmax/Ymax, Obs, NX/NY) :-
+moveLeft(X/Y, Xmax/Ymax, Obs, [(1, NX/NY)]) :-
   Next is X - 1,
   Next >= 0,
   not(member(Next/Y, Obs)),
@@ -68,7 +60,7 @@ moveLeft(X/Y, Xmax/Ymax, Obs, []) :-
   member(Next/Y, Obs).
 
 
-moveRight(X/Y, Xmax/Ymax, Obs, NX/NY) :-
+moveRight(X/Y, Xmax/Ymax, Obs, [(1, NX/NY)]) :-
   Next is X + 1,
   Next <= Xmax,
   not(member(Next/Y, Obs)),
@@ -82,7 +74,7 @@ moveRight(X/Y, Xmax/Ymax, Obs, []) :-
   member(Next/Y, Obs).
 
 
-moveDown(X/Y, Xmax/Ymax, Obs, NX/NY) :-
+moveDown(X/Y, Xmax/Ymax, Obs, [(1, NX/NY)]) :-
   Next is Y + 1,
   Next <= Ymax,
   not(member(X/Next, Obs)),
@@ -96,7 +88,7 @@ moveDown(X/Y, Xmax/Ymax, Obs, []) :-
   member(X/Next, Obs).
 
 
-moveUp(X/Y, Xmax/Ymax, Obs, NX/NY) :-
+moveUp(X/Y, Xmax/Ymax, Obs, [(1, NX/NY)]) :-
   Next is Y - 1,
   Next >= 0,
   not(member(X/Next, Obs)),
@@ -123,9 +115,9 @@ successors(X/Y, Succs) :-
   moveLeft(X/Y, l/h, obs, N2), %Store left successor in N2
   moveUp(X/Y, l/h, obs, N3), %Store up successor in N3
   moveDown(X/Y, l/h, obs, N4), %Store down successor in N4
-  append((1, N1), (1, N2), L1),
-  append((1, N3), L1, L2),
-  append((1, N4), L2, Succs).
+  append(N1, (1, N2, L1),
+  append(N3, L1, L2),
+  append(N4, L2, Succs).
 
 
 %%
@@ -151,15 +143,30 @@ hfnUniform(_,0).       % causes search algorithm to do uniform costs search.
 
 %% Implement the Manhattan Distance
 hfnManhattan(X/Y, Val) :- 
+  loadMazeInfo(mazesDatabase), %loading the maze info
+  maze(_, _, _, _, _, GX/GY), %obtaining the goal state
+  Val is GX-X,
+  Val is Val + GY- Y.
+
 
 
 %% Implement the Rounded Euclidean Distance  (you may use sqrt and floor)
 hfnEuclid(X/Y, Val) :- 
+  loadMazeInfo(mazesDatabase), %loading the maze info
+  maze(_, _, _, _, _, GX/GY), %obtaining the goal state
+  Val is (GX-X) ** 2,
+  Val is floor(sqrt(Val + (GY- Y) ** 2)).
 
+max(Z,X,Y) :- X > Y, !, Z=X.
+max(Z,X,Y) :- X <= Y, !, Z=Y.
 
 %% Implement your own heuristic function
-hfnMyHeuristic(_, 0) :-
+hfnMyHeuristic(X/Y, Val) :-
+  loadMazeInfo(mazesDatabase), %loading the maze info
+  maze(_, _, _, _, _, GX/GY), %obtaining the goal state
 
+  mX is (GX - X), mY is (Gy - Y), max(higher, mX, mY),
+  Val is higher.
 
 
 /*-------------------------------------------------------------------------
