@@ -112,7 +112,7 @@ terminal(State) :-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%showState(State)%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% given helper. DO NOT  change this. It's used by play.pl
+%% given helper. DO NOT  change this. It is used by play.pl
 %% 
 showState( G ) :- 
 	printRows( G ). 
@@ -156,86 +156,41 @@ nextState(Plyr, Move, State, NewState, NextPlyr) :-
 	NewState is State,
 	NextPlyr is Plyr.	
 
+%%update(State, Move, NewState)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%validmove(Plyr,State,Proposed)%%%%%%%%%%%%%%%%%%%%
 %% 
 %% define validmove(Plyr,State,Proposed). 
 %   - true if Proposed move by Plyr is valid at State.
-%%validmove(Plyr,State,[PR, PC]) :-	
-%%	validate(Plyr, State, [PR, PC], [1, 0], CDown),
-%%	validate(Plyr, State, [PR, PC], [-1, 0], CUp),
-%%	validate(Plyr, State, [PR, PC], [0, 1], CRight),
-%%	validate(Plyr, State, [PR, PC], [0, -1], CLeft),
-%%	validate(Plyr, State, [PR, PC], [-1, -1], CULeft),
-%%	validate(Plyr, State, [PR, PC], [-1, 1], CURight),
-%%	validate(Plyr, State, [PR, PC], [1, -1], CDLeft),
-%%	validate(Plyr, State, [PR, PC], [1, 1], CDRight),
-%%	CDown > 0; CUp > 0; CRight > 0; CLeft > 0; CULeft > 0; CURight > 0; CDLeft > 0; CDRight > 0.
-
 validmove(Plyr,State,[PR, PC]) :-
 	get(State, [PR, PC], Element),
 	Element == '.',	
-	validate(Plyr, State, [PR, PC], [1, 0], CDown),
-	CDown > 0.
+	(validate(Plyr, State, [PR, PC], [1, 0], CDown), CDown > 0);
+	(validate(Plyr, State, [PR, PC], [-1, 0], CUp), CUp > 0);
+	(validate(Plyr, State, [PR, PC], [0, 1], CRight), CRight > 0);
+	(validate(Plyr, State, [PR, PC], [0, -1], CLeft), CLeft > 0);
+	(validate(Plyr, State, [PR, PC], [-1, -1], CULeft), CULeft > 0);
+	(validate(Plyr, State, [PR, PC], [-1, 1], CURight), CURight > 0);
+	(validate(Plyr, State, [PR, PC], [1, -1], CDLeft), CDLeft > 0);
+	(validate(Plyr, State, [PR, PC], [1, 1], CDRight), CDRight > 0).	
 
-validmove(Plyr,State,[PR, PC]) :-
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	validate(Plyr, State, [PR, PC], [-1, 0], CUp),
-	CUp > 0.	
 
-validmove(Plyr,State,[PR, PC]) :-
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	validate(Plyr, State, [PR, PC], [0, 1], CRight),
-	CRight > 0.
-	
-validmove(Plyr,State,[PR, PC]) :-
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	validate(Plyr, State, [PR, PC], [0, -1], CLeft),
-	CLeft > 0.
-	
-validmove(Plyr,State,[PR, PC]) :-
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	validate(Plyr, State, [PR, PC], [-1, -1], CULeft),
-	CULeft > 0.
-
-validmove(Plyr,State,[PR, PC]) :-	
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	validate(Plyr, State, [PR, PC], [-1, 1], CURight),
-	CURight > 0.
-
-validmove(Plyr,State,[PR, PC]) :-
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	validate(Plyr, State, [PR, PC], [1, -1], CDLeft),
-	CDLeft > 0.
-
-validmove(Plyr,State,[PR, PC]) :-
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	validate(Plyr, State, [PR, PC], [1, 1], CDRight),
-	CDRight > 0.
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%validate(Plyr, State, Proposed, Direction, Count)%%%%%%%%%%%%%%%%%%%
+%% 
+%% validate(Plyr, State, Proposed, Direction, Count)
+%   - true if Proposed move + Direction vector by Plyr brackets at least one piece
 validate(Plyr, State, [PR, PC], [DR, DC], Count) :-
 	Row is PR + DR,
 	Col is PC + DC,
-	0 <= R, 0 <= C,
-	6 >= R, 6 >= C,
+	0 <= Row, 0 <= Col,
+	6 >= Row, 6 >= Col,
 	get(State, [Row, Col], Element),
 	Other is 2 - (Plyr - 1),
-	number_string(Other, needed),
-	Element == needed,
+	Element == Other,
 	validate(Plyr, State, [Row, Col], [DR, DC], C1),
 	Count is C1 + 1,
 	get(State, [Row, Col], bracketer),
-	player is number_string(Plyr, looking),
-	bracketer == player.
-
-
+	bracketer == Plyr.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%h(State,Val)%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -247,7 +202,14 @@ validate(Plyr, State, [PR, PC], [DR, DC], Count) :-
 %   NOTE2. If State is not terminal h should be an estimate of
 %          the value of state (see handout on ideas about
 %          good heuristics.
-h(_, 0).
+h(State, Val) :-
+	winner(State, 1), Val is 1, !.
+
+h(State, Val) :-
+	winner(State, 2), Val is -1, !.
+
+h(State, Val) :-
+	(not(terminal(State)); tie(State)), Val is 0. 
 
 
 
