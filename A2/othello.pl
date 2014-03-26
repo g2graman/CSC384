@@ -77,7 +77,7 @@ winner(State, Plyr) :-
 	terminal(State),
 	countNest(State, Plyr, C1),
 	countNest(State, 2 - (Plyr - 1), C2), %%other player
-	C1 > C2.
+	C1 > C2, !.
 
 
 
@@ -91,10 +91,7 @@ tie(State) :-
 	terminal(State),
 	countNest(State, 1, C1),
 	countNest(State, 2, C2),
-	C1 == C2.
-
-
-
+	C1 == C2, !.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%terminal(...)%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -104,11 +101,8 @@ tie(State) :-
 
 terminal(State) :-	
 	moves(1, State, X), moves(2, State, Y),
-	length(X, x), length(Y, y),
-	x == y, x == 0.
-
-
-
+	length(X, A), length(Y, B),
+	A == B, A == 0, !.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%showState(State)%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -129,16 +123,24 @@ printList([H | L]) :-
 	write(' '),
 	printList(L).
 
+addMove(_, _, [PR, PC], X, X) :-
+	PR >= 5,
+	PC >= 5, !.
+
+addMove(Plyr, State, [PR, PC], PrevMvList, MvList) :-
+	(validmove(Plyr, State, [PR, PC]) -> append(PrevMvList, [[PR, PC]], TempList); append(PrevMvList, [], TempList)),
+	NPR is (PR + 1) mod 6,
+	NPC is PC + 1,
+	(NPR == 0 -> addMove(Plyr, State, [NPR, NPC], TempList, MvList); addMove(Plyr, State, [NPR, PC], TempList, MvList)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%moves(Plyr,State,MvList)%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 
 %% define moves(Plyr,State,MvList). 
 %   - returns list MvList of all legal moves Plyr can make in State
-%
-
-
-
-
+%	
+moves(Plyr, State, MvList) :-
+	addMove(Plyr, State, [0, 0], [], MvList).
+	
 
 %%%%%%%%%%%%%%nextState(Plyr,Move,State,NewState,NextPlyr)%%%%%%%%%%%%%%%%%%%%
 %% 
@@ -147,50 +149,96 @@ printList([H | L]) :-
 %     state) and NextPlayer (i.e. the next player who will move).
 %
 nextState(Plyr, Move, State, NewState, NextPlyr) :-
-	validmove(Plyr, State, Move),
-	update(State, Move, NewState),
-	NextPlyr is 2 - (Plyr - 1).	
+	update(Plyr, State, Move, S1, [1,0]),
+	update(Plyr, S1, Move, S2, [-1, 0]),
+	update(Plyr, S2, Move, S3, [0, 1]),
+	update(Plyr, S3, Move, S4, [0, -1]),
+	update(Plyr, S4, Move, S5, [-1, -1]),
+	update(Plyr, S5, Move, S6, [-1, 1]),
+	update(Plyr, S6, Move, S7, [1, -1]),
+	update(Plyr, S7, Move, NewState, [1, 1]),
+	NextPlyr is 2 - (Plyr - 1).
+		
 
-nextState(Plyr, Move, State, NewState, NextPlyr) :-
-	not(validmove(Plyr, State, Move)),
-	NewState is State,
-	NextPlyr is Plyr.	
+update(Plyr, State, [MoveX, MoveY], NewState, [DR, DC]) :-
+	((validate(Plyr, State, [MoveX, MoveY], [DR, DC], 0, Count) -> Count > 0; Count > 0) -> set(State, TempState, [MoveX, MoveY], Plyr), MX is MoveX + DR, MY is MoveY + DC, fixBracket(Plyr, TempState, [MX, MY], [DR, DC], NewState); NewState = State).
 
-%%update(State, Move, NewState)
+update(_, State, _, State, _).
+
+fixBracket(Plyr, State, [SR, SC], [DR, DC], NewState) :-
+	Other is 2 - (Plyr - 1), 
+	(get(State, [SR, SC], Other) -> set(State, TempState, [SR, SC], Plyr), NSR is SR + DR, NSC is SC + DC, set(TempState, NewState, [NSR, NSC], Plyr), fixBracket(Plyr, NewState, [NSR, NSC], [DR, DC], NewState); NewState = State).
+
+fixBracket(_, State, _, _, State).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%validmove(Plyr,State,Proposed)%%%%%%%%%%%%%%%%%%%%
 %% 
 %% define validmove(Plyr,State,Proposed). 
 %   - true if Proposed move by Plyr is valid at State.
+%%TODO: VERIFY VALIDMOVE??
 validmove(Plyr,State,[PR, PC]) :-
-	get(State, [PR, PC], Element),
-	Element == '.',	
-	(validate(Plyr, State, [PR, PC], [1, 0], CDown), CDown > 0);
-	(validate(Plyr, State, [PR, PC], [-1, 0], CUp), CUp > 0);
-	(validate(Plyr, State, [PR, PC], [0, 1], CRight), CRight > 0);
-	(validate(Plyr, State, [PR, PC], [0, -1], CLeft), CLeft > 0);
-	(validate(Plyr, State, [PR, PC], [-1, -1], CULeft), CULeft > 0);
-	(validate(Plyr, State, [PR, PC], [-1, 1], CURight), CURight > 0);
-	(validate(Plyr, State, [PR, PC], [1, -1], CDLeft), CDLeft > 0);
-	(validate(Plyr, State, [PR, PC], [1, 1], CDRight), CDRight > 0).	
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [1, 0], 0, Count) -> Count > 0; Count > 0).
+
+validmove(Plyr,State,[PR, PC]) :-
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [-1, 0], 0, Count) -> Count > 0; Count > 0).
+
+validmove(Plyr,State,[PR, PC]) :-
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [0, 1], 0, Count) -> Count > 0; Count > 0).
+
+validmove(Plyr,State,[PR, PC]) :-
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [0, -1], 0, Count) -> Count > 0; Count > 0).
+
+validmove(Plyr,State,[PR, PC]) :-
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [-1, -1], 0, Count) -> Count > 0; Count > 0).
+
+validmove(Plyr,State,[PR, PC]) :-
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [-1, 1], 0, Count) -> Count > 0; Count > 0).
+
+validmove(Plyr,State,[PR, PC]) :-
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [1, -1], 0, Count) -> Count > 0; Count > 0).
+
+validmove(Plyr,State,[PR, PC]) :-
+	get(State, [PR, PC], '.'),
+	(validate(Plyr, State, [PR, PC], [1, 1], 0, Count) -> Count > 0; Count > 0).
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%validate(Plyr, State, Proposed, Direction, Count)%%%%%%%%%%%%%%%%%%%
 %% 
 %% validate(Plyr, State, Proposed, Direction, Count)
 %   - true if Proposed move + Direction vector by Plyr brackets at least one piece
-validate(Plyr, State, [PR, PC], [DR, DC], Count) :-
+
+validate(Plyr, State, [PR, PC], [DR, DC], LC, Count) :-
 	Row is PR + DR,
 	Col is PC + DC,
-	0 <= Row, 0 <= Col,
-	6 >= Row, 6 >= Col,
-	get(State, [Row, Col], Element),
 	Other is 2 - (Plyr - 1),
-	Element == Other,
-	validate(Plyr, State, [Row, Col], [DR, DC], C1),
-	Count is C1 + 1,
-	get(State, [Row, Col], bracketer),
-	bracketer == Plyr.
+	(get(State, [Row, Col], Other), TC is LC + 1 -> validate(Plyr, State, [Row, Col], [DR, DC], TC, Count); get(State, [Row, Col], Plyr), Count is LC).
+
+validate(_ ,_ ,_ , _, 0, 0).
+
+validate(_, _, [PR, _], [DR, _], LC, LC) :-
+	CR is PR + DR,
+	CR > 5.
+
+validate(_, _, [_, PC], [_, DC], LC, LC) :-
+	CC is PC + DC,
+	CC > 5.
+
+validate(_, _, [_, PC], [_, DC], LC, LC) :-
+	CC is PC + DC,
+	CC < 0.
+
+validate(_, _, [PR, _], [DR, _], LC, LC) :-
+	CR is PR + DR,
+	CR < 0.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%h(State,Val)%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -209,7 +257,7 @@ h(State, Val) :-
 	winner(State, 2), Val is -1, !.
 
 h(State, Val) :-
-	(not(terminal(State)); tie(State)), Val is 0. 
+	(\+(terminal(State)); tie(State)), Val is 0. 
 
 
 
