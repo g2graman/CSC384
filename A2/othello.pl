@@ -74,10 +74,10 @@ initialize(InitialState,InitialPlyr) :-
 %     - returns winning player if State is a terminal position and
 %     Plyr has a higher score than the other player
 winner(State, Plyr) :-
-	terminal(State),
+	terminal(State), !,
 	countNest(State, Plyr, C1),
 	countNest(State, 2 - (Plyr - 1), C2), %%other player
-	C1 > C2, !.
+	C1 > C2.
 
 
 
@@ -88,10 +88,10 @@ winner(State, Plyr) :-
 %% define tie(State) here. 
 %    - true if terminal State is a "tie" (no winner) 
 tie(State) :-
-	terminal(State),
+	terminal(State),!,
 	countNest(State, 1, C1),
 	countNest(State, 2, C2),
-	C1 == C2, !.
+	C1 == C2.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%terminal(...)%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -100,9 +100,9 @@ tie(State) :-
 %   - true if State is a terminal
 
 terminal(State) :-	
-	moves(1, State, X), moves(2, State, Y),
-	length(X, A), length(Y, B),
-	A == B, A == 0, !.
+	moves(1, State, X), moves(2, State, Y), !,
+	length(X, 0), length(Y, 0).
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%showState(State)%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -128,10 +128,12 @@ addMove(_, _, [PR, PC], X, X) :-
 	PC >= 5, !.
 
 addMove(Plyr, State, [PR, PC], PrevMvList, MvList) :-
-	(validmove(Plyr, State, [PR, PC]) -> append(PrevMvList, [[PR, PC]], TempList); append(PrevMvList, [], TempList)),
-	NPR is (PR + 1) mod 6,
-	NPC is PC + 1,
-	(NPR == 0 -> addMove(Plyr, State, [NPR, NPC], TempList, MvList); addMove(Plyr, State, [NPR, PC], TempList, MvList)).
+	(validmove(Plyr, State, [PR, PC]) -> append(PrevMvList, [[PR, PC]], TempList); TempList = PrevMvList),
+	NPR is (PR + 1),
+	NPC is (PC + 1) mod 6,
+	(NPC == 0 -> addMove(Plyr, State, [NPR, NPC], TempList, MvList); addMove(Plyr, State, [PR, NPC], TempList, MvList)).
+
+addMove(_, _, _, _, []).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%moves(Plyr,State,MvList)%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 
@@ -140,6 +142,8 @@ addMove(Plyr, State, [PR, PC], PrevMvList, MvList) :-
 %	
 moves(Plyr, State, MvList) :-
 	addMove(Plyr, State, [0, 0], [], MvList).
+
+moves(_, _, []).
 	
 
 %%%%%%%%%%%%%%nextState(Plyr,Move,State,NewState,NextPlyr)%%%%%%%%%%%%%%%%%%%%
@@ -161,21 +165,20 @@ nextState(Plyr, Move, State, NewState, NextPlyr) :-
 		
 
 update(Plyr, State, [MoveX, MoveY], NewState, [DR, DC]) :-
-	((validate(Plyr, State, [MoveX, MoveY], [DR, DC], 0, Count) -> Count > 0; Count > 0) -> set(State, TempState, [MoveX, MoveY], Plyr), MX is MoveX + DR, MY is MoveY + DC, fixBracket(Plyr, TempState, [MX, MY], [DR, DC], NewState); NewState = State).
+	((validate(Plyr, State, [MoveX, MoveY], [DR, DC], 0, Count) -> Count > 0; Count > 0) -> set(State, TempState, [MoveX, MoveY], Plyr), MX is MoveX + DR, MY is MoveY + DC, fixBracket(Plyr, TempState, [MX, MY], [DR, DC], NewState, Count); NewState = State).
 
 update(_, State, _, State, _).
 
-fixBracket(Plyr, State, [SR, SC], [DR, DC], NewState) :-
-	Other is 2 - (Plyr - 1), 
-	(get(State, [SR, SC], Other) -> set(State, TempState, [SR, SC], Plyr), NSR is SR + DR, NSC is SC + DC, set(TempState, NewState, [NSR, NSC], Plyr), fixBracket(Plyr, NewState, [NSR, NSC], [DR, DC], NewState); NewState = State).
+fixBracket(Plyr, State, [SR, SC], [DR, DC], NewState, LeftToChange) :-
+	(LeftToChange > 0 -> set(State, TempState, [SR, SC], Plyr), NSR is SR + DR, NSC is SC + DC, NewLeft is LeftToChange - 1, fixBracket(Plyr, TempState, [NSR, NSC], [DR, DC], NewState, NewLeft); set(State, NewState, [SR, SC], Plyr)).
 
-fixBracket(_, State, _, _, State).
+fixBracket(_, State, _, _, State, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%validmove(Plyr,State,Proposed)%%%%%%%%%%%%%%%%%%%%
 %% 
 %% define validmove(Plyr,State,Proposed). 
-%   - true if Proposed move by Plyr is valid at State.
-%%TODO: VERIFY VALIDMOVE??
+%%  - true if Proposed move by Plyr is valid at State (if Plyr brackets at least 1 piece in any direction)
+%%
 validmove(Plyr,State,[PR, PC]) :-
 	get(State, [PR, PC], '.'),
 	(validate(Plyr, State, [PR, PC], [1, 0], 0, Count) -> Count > 0; Count > 0).
@@ -208,38 +211,19 @@ validmove(Plyr,State,[PR, PC]) :-
 	get(State, [PR, PC], '.'),
 	(validate(Plyr, State, [PR, PC], [1, 1], 0, Count) -> Count > 0; Count > 0).
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%validate(Plyr, State, Proposed, Direction, Count)%%%%%%%%%%%%%%%%%%%
 %% 
 %% validate(Plyr, State, Proposed, Direction, Count)
-%   - true if Proposed move + Direction vector by Plyr brackets at least one piece
+%% -Always returns true and upon completion sets Count to the number of bracketed pieces with respect to the
+%% direction vector [DR, DC] from the initial proposed move.
 
 validate(Plyr, State, [PR, PC], [DR, DC], LC, Count) :-
 	Row is PR + DR,
 	Col is PC + DC,
 	Other is 2 - (Plyr - 1),
-	(get(State, [Row, Col], Other), TC is LC + 1 -> validate(Plyr, State, [Row, Col], [DR, DC], TC, Count); get(State, [Row, Col], Plyr), Count is LC).
+	(get(State, [Row, Col], Other) -> TC is LC + 1, validate(Plyr, State, [Row, Col], [DR, DC], TC, Count); get(State, [Row, Col], Plyr), Count is LC).
 
 validate(_ ,_ ,_ , _, 0, 0).
-
-validate(_, _, [PR, _], [DR, _], LC, LC) :-
-	CR is PR + DR,
-	CR > 5.
-
-validate(_, _, [_, PC], [_, DC], LC, LC) :-
-	CC is PC + DC,
-	CC > 5.
-
-validate(_, _, [_, PC], [_, DC], LC, LC) :-
-	CC is PC + DC,
-	CC < 0.
-
-validate(_, _, [PR, _], [DR, _], LC, LC) :-
-	CR is PR + DR,
-	CR < 0.
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%h(State,Val)%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 
