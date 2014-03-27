@@ -15,9 +15,9 @@
 %%
 %%  CSC384 Winter 2014, Assignment 2, Part C
 %%
-%%  NAME:
+%%  NAME: Francesco Gramano
 %%
-%%  STUDENT NUMBER:
+%%  STUDENT NUMBER: 999203767
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -25,7 +25,7 @@
 <Question 0>
 %% [0 marks, but mandatory to fill out]
 %% Did you complete part B? Please enter "yes" or "no" below.
-
+No.
 
 /* ------------------------------------------------------ */
 <Question 1 with your Part A code>
@@ -36,11 +36,11 @@
 -------------------------------------------------------
 | Board # | # of Expanded Nodes | Applied Move [X, Y] | 
 -------------------------------------------------------
-| 1       |                     |                     |
+| 1       |        2220         |       [0,0]         |
 -------------------------------------------------------
-| 2       |                     |                     |
+| 2       |         537         |       [1,3]         |
 -------------------------------------------------------
-| 3       |                     |                     |
+| 3       |        12870        |       [0,5]         |
 -------------------------------------------------------
 
 /* ------------------------------------------------------ */
@@ -52,11 +52,11 @@
 -------------------------------------------------------
 | Board # | # of Expanded Nodes | Applied Move [X, Y] | 
 -------------------------------------------------------
-| 1       |                     |                     |
+| 1       |         323         |       [0,0]         |
 -------------------------------------------------------
-| 2       |                     |                     |
+| 2       |         170         |       [1,3]         |
 -------------------------------------------------------
-| 3       |                     |                     |
+| 3       |        1298         |       [0,5]         |
 -------------------------------------------------------
 
 /* ------------------------------------------------------ */
@@ -101,6 +101,7 @@
 %% In 250 words or less, compare the results displayed in all your
 %% tables.
 %% (MiniMax vs. Alpha-Beta, with and without your heuristic if relevant)
+The Alpha-Beta MiniMax implementation expanded a lot less nodes and resulted in the same optimal moves for the same settings of the respective boards, suggesting confirming the correctness of the Alpha-Beta pruning in not needing to expand all branches since we received the same answers for the three testboards after evaluating the entire tree in the more primitive minimax algorithm and with the Alpha-Beta pruning improved algorithm.
 
 
 

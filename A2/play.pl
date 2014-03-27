@@ -126,7 +126,7 @@ getmove(1,State,Move) :-
 getmove(2,State,Move) :- 
   showState(State), 
   writeln('Computer is moving...'), 
-  mmeval(2,State,_,Move,3,SeF), 
+  mmeval(2,State,_,Move,5,SeF), 
   write('Compute Move computed by searching '), 
   write(SeF), 
   writeln(' states.'). 
