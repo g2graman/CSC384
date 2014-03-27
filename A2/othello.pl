@@ -123,6 +123,11 @@ printList([H | L]) :-
 	write(' '),
 	printList(L).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%addMove(Plyr,State, Proposed, PrevMvList, MvList)%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% addMove(Plyr,State, Proposed, PrevMvList, MvList). 
+%   - returns list MvList of all legal moves Plyr can make in State from move Proposed, where list PrevMvList are moves that have already been validated.
+%	
 addMove(_, _, [PR, PC], X, X) :-
 	PR >= 5,
 	PC >= 5, !.
@@ -163,12 +168,23 @@ nextState(Plyr, Move, State, NewState, NextPlyr) :-
 	update(Plyr, S7, Move, NewState, [1, 1]),
 	NextPlyr is 2 - (Plyr - 1).
 		
-
+%%%%%%%%%%%%%%update(Plyr, State, Move, NewState, Direction)%%%%%%%%%%%%%%%%%%%%
+%% 
+%% update(Plyr, State, Move, NewState, Direction).
+%   - given that Plyr makes Move in State (which is presumed to have already been validated), it determines NewState (i.e. the next 
+%     state) which is the result of reversing bracketed pieces.
+%
 update(Plyr, State, [MoveX, MoveY], NewState, [DR, DC]) :-
 	((validate(Plyr, State, [MoveX, MoveY], [DR, DC], 0, Count) -> Count > 0; Count > 0) -> set(State, TempState, [MoveX, MoveY], Plyr), MX is MoveX + DR, MY is MoveY + DC, fixBracket(Plyr, TempState, [MX, MY], [DR, DC], NewState, Count); NewState = State).
 
 update(_, State, _, State, _).
 
+
+%%%%%%%%%%%%%%fixBracket(Plyr, State, Move, Direction, NewState, CountRemaining)%%%%%%%%%%%%%%%%%%%%
+%% 
+%% fixBracket(Plyr, State, Move, Direction, NewState, CountRemaining).
+%   - Reverses the opponent's bracketed pieces with respect to the direction vector Direction for CountRemaining squares. 
+%
 fixBracket(Plyr, State, [SR, SC], [DR, DC], NewState, LeftToChange) :-
 	(LeftToChange > 0 -> set(State, TempState, [SR, SC], Plyr), NSR is SR + DR, NSC is SC + DC, NewLeft is LeftToChange - 1, fixBracket(Plyr, TempState, [NSR, NSC], [DR, DC], NewState, NewLeft); set(State, NewState, [SR, SC], Plyr)).
 
@@ -214,7 +230,7 @@ validmove(Plyr,State,[PR, PC]) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%validate(Plyr, State, Proposed, Direction, Count)%%%%%%%%%%%%%%%%%%%
 %% 
 %% validate(Plyr, State, Proposed, Direction, Count)
-%% -Always returns true and upon completion sets Count to the number of bracketed pieces with respect to the
+%% - Always returns true and upon completion sets Count to the number of bracketed pieces with respect to the
 %% direction vector [DR, DC] from the initial proposed move.
 
 validate(Plyr, State, [PR, PC], [DR, DC], LC, Count) :-
